@@ -2,7 +2,7 @@
 % Please edit documentation in R/FDistUlt.R
 \name{FDistUlt}
 \alias{FDistUlt}
-\title{Fit to a mixed univariate distributions}
+\title{Fits a set of observations (random variable) to test whether is drawn from a certain distribution}
 \usage{
 FDistUlt(X, n.obs = length(X), ref = "OP", crt = 1, plot = FALSE,
   subplot = FALSE, p.val_min = 0.05)
@@ -23,20 +23,35 @@ FDistUlt(X, n.obs = length(X), ref = "OP", crt = 1, plot = FALSE,
 \item{p.val_min}{Minimum p.value to be given to non-reject the null hypothesis.}
 }
 \value{
-A list with whe density functions, a random sample, a  data frame with p.values results, the corresponding plots an the random numbers generator functions
+A list with the density functions, a random sample, a  data frame with the KS and AD p.values results, the corresponding plots an the random numbers generator functions
 }
 \description{
-Fit to a mixed univariate distributions
+Fits a set of observations (random variable) to test whether is drawn from a certain distribution
 }
 \examples{
-X<-c(rnorm(73,189,12),rweibull(82,401,87),rgamma(90,40,19))
+
+set.seed(31109)
+X<-c(rnorm(193,189,12),rweibull(182,401,87),rgamma(190,40,19))
+
 A_X<-FDistUlt(X,plot=TRUE,subplot=TRUE)
-#A_X[[1]][[1]]()
-#A_X[[2]]
-#A_X[[3]]
-#x11();A_X[[4]][[1]]
-#x11();A_X[[4]][[2]]
-#A_X[[5]][[1]]()
+
+A_X<-FDistUlt(X,plot=TRUE,subplot=TRUE,p.val_min=.005)
+
+# Functions generated
+A_X[[1]][[1]]()
+# Random sample
+A_X[[2]]
+
+#Distributions
+A_X[[3]]
+
+# Plots
+par(mfrow=c(1,2))
+A_X[[4]][[1]]
+A_X[[4]][[2]]
+
+# More functions
+A_X[[5]][[1]]()
 
 
 }

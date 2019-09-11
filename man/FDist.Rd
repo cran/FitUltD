@@ -5,7 +5,7 @@
 \title{Fit of univariate distributions with censored data ignored by default or can be inputed.}
 \usage{
 FDist(X, gen = 1, Cont = TRUE, inputNA, plot = FALSE,
-  p.val_min = 0.05, criteria = 2, DPQR = T)
+  p.val_min = 0.05, crit = 2, DPQR = TRUE)
 }
 \arguments{
 \item{X}{A random sample to be fitted.}
@@ -20,7 +20,7 @@ FDist(X, gen = 1, Cont = TRUE, inputNA, plot = FALSE,
 
 \item{p.val_min}{0.05, minimum p.value for Anderson Darling and KS Test to non-reject the null hypothesis and continue with the process.}
 
-\item{criteria}{A positive integer to define which test will use. If 1, show the distributions which were non-rejected by the Anderson Darling or Kolmogorov Smirnov tests, in other cases the criteria is that they mustn't be rejected by both.}
+\item{crit}{A positive integer to define which test will use. If 1, show the distributions which were non-rejected by the Anderson Darling or Kolmogorov Smirnov tests, in other cases the criterion is that they mustn't be rejected by both tests.}
 
 \item{DPQR}{TRUE, creates the distribution function, density and quantile function with the names dfit, pfit and qfit.}
 }
@@ -31,11 +31,26 @@ Calculate the distribution name with parameters, a function to reproduce random 
 Fit of univariate distributions with censored data ignored by default or can be inputed.
 }
 \examples{
-FIT1<-FDist(rnorm(1000,10),p.val_min=.03,criteria=1,plot=TRUE)
-#FIT1[[1]]
-#FIT1[[2]]()
-#FIT1[[4]]
-#FIT1[[5]]
+set.seed(31109)
+FIT1<-FDist(rnorm(1000,10),p.val_min=.03,crit=1,plot=TRUE)
+
+#Random Variable
+FIT1[[1]]
+
+#Random numbers generator
+FIT1[[2]]()
+
+#Random sample
+FIT1[[3]]
+
+#Goodness of fit tests results
+FIT1[[4]]
+
+#Plot
+FIT1[[5]]
+
+#Functions r, p, d, q
+FIT1[[6]]
 
 
 

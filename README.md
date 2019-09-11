@@ -15,29 +15,24 @@ density functions
 You can install the released version of FitUltD from
 [CRAN](https://CRAN.R-project.org) with:
 
-``` r
-install.packages("FitUltD")
-```
+install.packages(“FitUltD”)
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This is a basic example which shows you how to fit a multimodal random
+variable:
 
 ``` r
 library(FitUltD)
-FIT1<-FDistUlt(c(rnorm(73,189,12),rweibull(82,401,87),rgamma(90,40,19)), plot=TRUE)
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
-#> Error in computing default starting values.
+#> Loading required package: mclust
+#> Package 'mclust' version 5.4.5
+#> Type 'citation("mclust")' for citing this R package in publications.
+#random Variable
+RV<-c(rnorm(73,189,12),rweibull(82,401,87),rgamma(90,40,19))
+
+FIT1<-FDistUlt(RV, plot=TRUE, subplot = TRUE)
+#> <simpleError in optim(par = vstart, fn = fnobj, fix.arg = fix.arg, obs = data,     gr = gradient, ddistnam = ddistname, hessian = TRUE, method = meth,     lower = lower, upper = upper, ...): non-finite finite-difference value [2]>
+#> <simpleError in optim(par = vstart, fn = fnobj, fix.arg = fix.arg, obs = data,     gr = gradient, pdistnam = pdistname, hessian = TRUE, method = meth,     lower = lower, upper = upper, ...): non-finite finite-difference value [2]>
 ```
 
 What is special about using `README.Rmd` instead of just `README.md`?
@@ -45,10 +40,11 @@ You can include R chunks like so:
 
 ``` r
 FIT1[[3]]
-#>               Distribucion Prop_dist    AD_p.v    KS_p.v Chs_p.v
-#> AD4     lnorm(5.24, 0.077) 0.2979592 0.9675941 0.9298268       0
-#> AD12   norm(86.871, 0.277) 0.3346939 0.6223739 0.7982842       0
-#> AD2  gamma(48.145, 22.723) 0.3673469 0.9556936 0.9826995       0
+#>                    Distribucion  Prop_dist    AD_p.v    KS_p.v Chs_p.v
+#> AD6         lnorm(5.242, 0.052) 0.29795918 0.8372311 0.8985857       0
+#> AD8    weibull(434.484, 86.552) 0.09387755 0.8861584 0.7938189       0
+#> AD2  gamma(497882.65, 5721.237) 0.24081633 0.7523182 0.7705192       0
+#> AD61        lnorm(0.722, 0.162) 0.36734694 0.9807500 0.9616154       0
 ```
 
 You’ll still need to render `README.Rmd` regularly, to keep `README.md`
@@ -58,5 +54,4 @@ You can also embed plots, for example:
 
 <img src="man/figures/README-pressure-1.png" width="100%" />
 
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub\!
+<img src="man/figures/README-plots-mult-1.png" width="100%" />

@@ -7,7 +7,7 @@
 #' @param inputNA A number to replace censored values, if is missing, only non-censored values will be evaluated.
 #' @param plot FALSE. If TRUE, a plot showing the data distribution will be given.
 #' @param p.val_min 0.05, minimum p.value for Anderson Darling and KS Test to non-reject the null hypothesis and continue with the process.
-#' @param criteria A positive integer to define which test will use. If 1, show the distributions which were non-rejected by the Anderson Darling or Kolmogorov Smirnov tests, in other cases the criteria is that they mustn't be rejected by both.
+#' @param crit A positive integer to define which test will use. If 1, show the distributions which were non-rejected by the Anderson Darling or Kolmogorov Smirnov tests, in other cases the criterion is that they mustn't be rejected by both tests.
 #' @param DPQR TRUE, creates the distribution function, density and quantile function with the names dfit, pfit and qfit.
 #'
 #' @return Calculate the distribution name with parameters, a function to reproduce random values from that distribution, a numeric vector of random numbers from that function, Anderson Darling and KS p.values, a plot showing the distribution difference between the real sample and the generated values and a list with the random deviates genetator, the distribution function, density and quantile function
@@ -26,41 +26,65 @@
 #' @importFrom stats rnorm
 #'
 #' @examples
-#' FIT1<-FDist(rnorm(1000,10),p.val_min=.03,criteria=1,plot=TRUE)
-#' #FIT1[[1]]
-#' #FIT1[[2]]()
-#' #FIT1[[4]]
-#' #FIT1[[5]]
+#' set.seed(31109)
+#' FIT1<-FDist(rnorm(1000,10),p.val_min=.03,crit=1,plot=TRUE)
+#'
+#' #Random Variable
+#' FIT1[[1]]
+#'
+#' #Random numbers generator
+#' FIT1[[2]]()
+#'
+#' #Random sample
+#' FIT1[[3]]
+#'
+#' #Goodness of fit tests results
+#' FIT1[[4]]
+#'
+#' #Plot
+#' FIT1[[5]]
+#'
+#' #Functions r, p, d, q
+#' FIT1[[6]]
 #'
 #'
 #'
-FDist<-function(X,gen=1,Cont=TRUE,inputNA,plot=FALSE,p.val_min=.05,criteria=2,DPQR=T){
+FDist<-function(X,gen=1,Cont=TRUE,inputNA,plot=FALSE,p.val_min=.05,crit=2,DPQR=TRUE){
   if(missing(inputNA)){X<-na.omit(X)}
   else{X<-ifelse(is.na(X),inputNA,X)}
   if(length(X)==0){
     return(NULL)
   }
+  X<-X[X!=(-Inf) & X!=Inf]
   if (length(unique(X))<2) {
     fun_g<-function(n=gen){return(rep(X[1],n))}
-    return(list(paste0("norm(",X[1],",0)"),fun_g,rep(X[1],gen),data.frame( AD_p.v=1,KS_p.v=1,Chs_p.v=1),NULL))
-  }
-  if(prod(X==floor(X))==1){
-    Cont<-FALSE
+    return(list(paste0("norm(",X[1],",0)"),fun_g,rep(X[1],gen),data.frame(Dist="norm",AD_p.v=1,KS_p.v=1,estimate1=X[1],estimate2=0,estimateLL1=0,estimateLL2=1,PV_S=2),NULL))
   }
   if (length(unique(X))==2) {
-    p<-length(X[X==unique(X)[1]])/length(X)
-    Ber<-function(p.=p,n=gen){
-      stats::runif(n) > (1 - p)
+    X<-sort(X)
+    p<-length(X[X==unique(X)[2]])/length(X)
+    gene<-stats::rbinom
+    formals(gene)[1]<-length(X)
+    formals(gene)[2]<-1
+    formals(gene)[3]<-p
+    distribu<-paste0("binom(",p,")")
+    MA=gene(n = gen)
+    if(plot){
+      DF<-rbind(data.frame(A="Fit",DT=MA),
+                data.frame(A="Real",DT=X))
+      pl <- ggplot2::ggplot(DF,ggplot2::aes(x=DF$DT,fill=DF$A)) + ggplot2::geom_density(alpha=0.4) +ggplot2::ggtitle(distribu)
+    }else{
+      pl<-NULL
     }
-    return(list("Ber",Ber,Ber(p)))
+    return(list(distribu,gene,MA[1:gen],data.frame(Dist="binom",AD_p.v=1,KS_p.v=1,estimate1=1,estimate2=p,estimateLL1=0,estimateLL2=1,PV_S=2),pl))
   }
-  DIS<-list(Nombres=c("exp","pois","beta","gamma","lnorm","norm","weibull","nbinom","hyper","cauchy"),
-            p=c(stats::pexp,stats::ppois,stats::pbeta,stats::pgamma,stats::plnorm,stats::pnorm,stats::pweibull,stats::pnbinom,stats::phyper,stats::pcauchy),
-            d=c(stats::dexp,stats::dpois,stats::dbeta,stats::dgamma,stats::dlnorm,stats::dnorm,stats::dweibull,stats::dnbinom,stats::dhyper,stats::dcauchy),
-            q=c(stats::qexp,stats::qpois,stats::qbeta,stats::qgamma,stats::qlnorm,stats::qnorm,stats::qweibull,stats::qnbinom,stats::qhyper,stats::qcauchy),
-            r=c(stats::rexp,stats::rpois,stats::rbeta,stats::rgamma,stats::rlnorm,stats::rnorm,stats::rweibull,stats::rnbinom,stats::rhyper,stats::rcauchy),
-            d_c=c(1,0,1,1,1,1,1,0,0,1),
-            indicadora=c("0","0","01","0","0","R","0","0","0","R")
+  DIS<-list(Nombres=c("exp","pois","beta","gamma","lnorm","norm","weibull","nbinom","hyper","cauchy","binom"),
+            p=c(stats::pexp,stats::ppois,stats::pbeta,stats::pgamma,stats::plnorm,stats::pnorm,stats::pweibull,stats::pnbinom,stats::phyper,stats::pcauchy,stats::pbinom),
+            d=c(stats::dexp,stats::dpois,stats::dbeta,stats::dgamma,stats::dlnorm,stats::dnorm,stats::dweibull,stats::dnbinom,stats::dhyper,stats::dcauchy,stats::dbinom),
+            q=c(stats::qexp,stats::qpois,stats::qbeta,stats::qgamma,stats::qlnorm,stats::qnorm,stats::qweibull,stats::qnbinom,stats::qhyper,stats::qcauchy,stats::qbinom),
+            r=c(stats::rexp,stats::rpois,stats::rbeta,stats::rgamma,stats::rlnorm,stats::rnorm,stats::rweibull,stats::rnbinom,stats::rhyper,stats::rcauchy,stats::rbinom),
+            d_c=c(1,0,1,1,1,1,1,0,0,1,0),
+            indicadora=c("0","0","01","0","0","R","0","0","0","R","0")
   )
   DIS<-purrr::map(DIS,~subset(.x, DIS$d_c==as.numeric(Cont)))
   DIS_0<-purrr::map(DIS,~subset(.x, DIS$indicadora=="0"))
@@ -106,6 +130,7 @@ FDist<-function(X,gen=1,Cont=TRUE,inputNA,plot=FALSE,p.val_min=.05,criteria=2,DP
       return(list())
     }
     funcionales<-!purrr::map_lgl(aju,~assertthat::is.error(.x))
+    names(aju)<-c("mle","mme","mge","mlg2")
     aju<-aju[funcionales]
     return(aju)
   }
@@ -113,21 +138,25 @@ FDist<-function(X,gen=1,Cont=TRUE,inputNA,plot=FALSE,p.val_min=.05,criteria=2,DP
   suppressWarnings(try(aju_R<-purrr::map(DIS_R$Nombres,~fit_b(bt,.x)),silent = TRUE))
   suppressWarnings(try(aju_01<-purrr::map(DIS_01$Nombres,~fit_b(b_01,.x)),silent = TRUE))
   AAA<-list(aju_0,aju_R,aju_01)
-  AAA<-AAA[purrr::map(AAA,~length(.x))!=0]
-  bts<-list(b_0,bt,b_01)
+  descate<-purrr::map(AAA,~length(.x))!=0
+  AAA<-AAA[descate]
+  bts<-list(b_0,bt,b_01)[descate]
   num<-0
   Compe<-data.frame()
   for (aju_ls in 1:length(AAA)) {
     aju<-AAA[[aju_ls]]
+    aju<-aju[purrr::map_lgl(aju,~length(.x)>0)]
     bs<-bts[[aju_ls]]
     for (comp in 1:length(aju)) {
+      if(length(aju)==0 ||length(aju[[comp]])==0){next()}
       for (ress in 1:length(aju[[comp]])) {
         num<-num+1
-        if(length(aju[[comp]])!=0){evaluar<-aju[[comp]][[ress]]}
-        else{evaluar<-NULL}
+        if(length(aju[[comp]])!=0){evaluar<-aju[[comp]][[ress]]
+        }else{evaluar<-NULL}
         if (is.null(evaluar) | length(evaluar)==0 |
             c(NA) %in% evaluar$estimate | c(NaN) %in% evaluar$estimate) {next()}
         distname<-evaluar$distname
+        method<-names(aju[[comp]])[[ress]]
         dist_pfun<-try(get(paste0("p",distname)),silent = TRUE)
         dist_rfun<-try(get(paste0("r",distname)),silent = TRUE)
         if(assertthat::is.error(dist_rfun)){next()}
@@ -137,9 +166,9 @@ FDist<-function(X,gen=1,Cont=TRUE,inputNA,plot=FALSE,p.val_min=.05,criteria=2,DP
         evaluar$estimate<-evaluar$estimate[names(evaluar$estimate) %in% argumentos]
         if(num_param==1){
           EAD<-try(AD<-ADGofTest::ad.test(bs,dist_pfun,evaluar$estimate[1]),silent = TRUE)
-          if (Cont) {KS<-try(KS<-stats::ks.test(bs,dist_pfun,evaluar$estimate[1]),silent = TRUE)}
-          else{KS<-data.frame(p.value=0)}
-          if(assertthat::is.error(EAD) | assertthat::is.error(KS)){next()}
+          KS<-try(stats::ks.test(bs,dist_pfun,evaluar$estimate[1]),silent = TRUE)
+          if(assertthat::is.error(KS)){KS<-data.frame(p.value=NA)}
+          if(assertthat::is.error(EAD)){next()}
           if(is.na(KS$p.value)){next()}
           Chs<-data.frame(p.value=0)
         }
@@ -150,10 +179,10 @@ FDist<-function(X,gen=1,Cont=TRUE,inputNA,plot=FALSE,p.val_min=.05,criteria=2,DP
           if (assertthat::is.error(Err_pl)) {
             Err_pl<-try(AD<-ADGofTest::ad.test(bs,dist_pfun,evaluar$estimate[1],,evaluar$estimate[2]),silent = TRUE)
           }
-          if (Cont) {Err_pl2<-try(KS<-stats::ks.test(bs,dist_pfun,evaluar$estimate[1],evaluar$estimate[2]),silent = TRUE)}
-          else{Err_pl2<-KS<-data.frame(p.value=0)}
-          if(assertthat::is.error(Err_pl) | assertthat::is.error(Err_pl2)){next()}
-          if(is.na(Err_pl2$p.value)){next()}
+          KS<-try(stats::ks.test(bs,dist_pfun,evaluar$estimate[1],evaluar$estimate[2]),silent = TRUE)
+          if(assertthat::is.error(KS)){KS<-data.frame(p.value=NA)}
+          if(assertthat::is.error(Err_pl)){next()}
+          if(is.na(KS$p.value)){next()}
           suppressWarnings(
             EE_Chs<-try(dst_chsq<-dist_rfun(length(bs),evaluar$estimate[1],evaluar$estimate[2]))
           )
@@ -163,10 +192,14 @@ FDist<-function(X,gen=1,Cont=TRUE,inputNA,plot=FALSE,p.val_min=.05,criteria=2,DP
           Chs<-data.frame(p.value=0)
         }
         pvvv<-p.val_min
-        if(criteria==1){
-          crit<-AD$p.value>pvvv | KS$p.value>pvvv | Chs$p.value >pvvv
+        if(all(is.na(KS$p.value))){
+          crit<-AD$p.value>pvvv
         }else{
-          crit<-AD$p.value>(pvvv) & KS$p.value>(pvvv)
+          if(crit==1){
+            crit<-AD$p.value>pvvv | KS$p.value>pvvv
+          }else{
+            crit<-AD$p.value>(pvvv) & KS$p.value>(pvvv)
+          }
         }
         if(crit){
           if(aju_ls %in% 3){
@@ -182,7 +215,7 @@ FDist<-function(X,gen=1,Cont=TRUE,inputNA,plot=FALSE,p.val_min=.05,criteria=2,DP
           Compe<-rbind(Compe,data.frame(Dist=distname,AD_p.v=AD$p.value,KS_p.v=KS$p.value,
                                         Chs_p.v=Chs$p.value,
                                         estimate1=evaluar$estimate[1],estimate2=evaluar$estimate[2],
-                                        estimateLL1=estimate3,estimateLL2=estimate4
+                                        estimateLL1=estimate3,estimateLL2=estimate4,method=method
           ))
           }else{
           next()
@@ -242,5 +275,5 @@ FDist<-function(X,gen=1,Cont=TRUE,inputNA,plot=FALSE,p.val_min=.05,criteria=2,DP
               data.frame(A="Real",DT=X))
     p <- ggplot2::ggplot(DF,ggplot2::aes(x=DF$DT,fill=DF$A)) + ggplot2::geom_density(alpha=0.4) +ggplot2::ggtitle(distribu)
   }
-  return(list(distribu,generadora_r,MA,WNR[,2:4],p,list(rfit,pfit,dfit,qfit)))
+  return(list(distribu,generadora_r,MA,WNR[,-4],p,list(rfit,pfit,dfit,qfit),Compe))
 }
